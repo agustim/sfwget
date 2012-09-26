@@ -1,0 +1,34 @@
+#!/bin/sh
+
+POSTDATA=""
+BOUNDARY="-----02CAFFEEBABE"
+URL="$1"
+FILE="$2"
+
+if [ $# -lt 2 ]; then
+      echo "$0 <url> <file>"; exit
+fi
+
+add_file() {
+        FULLFILENAME=$1
+        TEMPDATA="$(cat $FULLFILENAME)"
+        FILENAME="${FULLFILENAME##*/}"
+        POSTDATA="
+${POSTDATA}--${BOUNDARY}
+Content-Disposition: form-data; name=\"$FILENAME\"; filename="$FILENAME"
+Content-Type: text/plain
+
+${TEMPDATA}
+
+"
+}
+
+end_boundary() {
+        POSTDATA="${POSTDATA}--${BOUNDARY}- -"
+}
+
+add_file "${FILE}"
+end_boundary
+
+wget --header="Content-Type: multipart/form-data; boundary=${BOUNDARY}" --post-data="${POSTDATA}" -qO - ${URL}
+
